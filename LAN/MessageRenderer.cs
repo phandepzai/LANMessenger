@@ -311,7 +311,31 @@ namespace Messenger
 
                 using (GraphicsPath path = RoundedRectangle(Rectangle.Round(bubbleRect), borderRadius))
                 {
-                    g.FillPath(backgroundBrush, path);
+                    // Chọn màu gradient cho từng loại tin nhắn
+                    Color colorStart, colorEnd;
+                    if (message.IsMyMessage)//Tin nhắn gửi đi
+                    {
+                        colorStart = Color.FromArgb(114, 247, 101); // Xanh lá nhạt
+                        colorEnd = Color.FromArgb(220, 247, 168); // Xanh nhạt
+                    }
+                    else//Tin nhắn gửi đến
+                    {
+                        colorStart = Color.FromArgb(252, 228, 159); // Vàng nhạt
+                        colorEnd = Color.FromArgb(252, 250, 159); // Trắng nhạt
+                    }
+
+                    using (LinearGradientBrush gradientBrush = new LinearGradientBrush(
+                        bubbleRect,
+                        colorStart,
+                        colorEnd,
+                        LinearGradientMode.Vertical)) // Gradient ngang Horizontal,Gradient dọc Vertical
+                    {
+                        g.FillPath(gradientBrush, path);
+                    }
+                    using (Pen gradientBorder = new Pen(colorEnd, 1.0f)) // viền cùng màu phần dưới của gradient
+                    {
+                        g.DrawPath(gradientBorder, path);
+                    }
                 }
 
                 // Đảm bảo contentRect đủ lớn để chứa toàn bộ nội dung
