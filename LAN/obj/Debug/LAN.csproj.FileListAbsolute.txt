@@ -1,0 +1,11 @@
+D:\DEV\LAN\LAN\bin\Debug\Messenger.exe.config
+D:\DEV\LAN\LAN\bin\Debug\Messenger.exe
+D:\DEV\LAN\LAN\bin\Debug\Messenger.pdb
+D:\DEV\LAN\LAN\obj\Debug\LAN.csproj.AssemblyReference.cache
+D:\DEV\LAN\LAN\obj\Debug\Messenger.MainForm.resources
+D:\DEV\LAN\LAN\obj\Debug\Messenger.Properties.Resources.resources
+D:\DEV\LAN\LAN\obj\Debug\Messenger.RenameForm.resources
+D:\DEV\LAN\LAN\obj\Debug\LAN.csproj.GenerateResource.cache
+D:\DEV\LAN\LAN\obj\Debug\LAN.csproj.CoreCompileInputs.cache
+D:\DEV\LAN\LAN\obj\Debug\Messenger.exe
+D:\DEV\LAN\LAN\obj\Debug\Messenger.pdb
