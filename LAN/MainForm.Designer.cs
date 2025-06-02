@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace Messenger
 {
@@ -42,6 +44,7 @@ namespace Messenger
             this.dateLabel = new System.Windows.Forms.Label();
             this.authorLabel = new System.Windows.Forms.Label();
             this.dayLabel = new System.Windows.Forms.Label();
+            this.userNameLabel = new System.Windows.Forms.Label();
             this.messageContextMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -79,13 +82,13 @@ namespace Messenger
             // 
             this.onlineUsersListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-            this.onlineUsersListBox.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.onlineUsersListBox.BackColor = System.Drawing.Color.OldLace;
             this.onlineUsersListBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.onlineUsersListBox.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.onlineUsersListBox.ForeColor = System.Drawing.Color.ForestGreen;
             this.onlineUsersListBox.FormattingEnabled = true;
             this.onlineUsersListBox.ItemHeight = 17;
-            this.onlineUsersListBox.Location = new System.Drawing.Point(9, 50);
+            this.onlineUsersListBox.Location = new System.Drawing.Point(9, 84);
             this.onlineUsersListBox.Margin = new System.Windows.Forms.Padding(2);
             this.onlineUsersListBox.Name = "onlineUsersListBox";
             this.onlineUsersListBox.Size = new System.Drawing.Size(149, 272);
@@ -94,6 +97,7 @@ namespace Messenger
             // selectedPeerLabel
             // 
             this.selectedPeerLabel.AutoSize = true;
+            this.selectedPeerLabel.BackColor = System.Drawing.Color.Transparent;
             this.selectedPeerLabel.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.selectedPeerLabel.Location = new System.Drawing.Point(168, 3);
             this.selectedPeerLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
@@ -128,7 +132,7 @@ namespace Messenger
             // 
             // btnRename
             // 
-            this.btnRename.Location = new System.Drawing.Point(35, 12);
+            this.btnRename.Location = new System.Drawing.Point(35, 40);
             this.btnRename.Name = "btnRename";
             this.btnRename.Size = new System.Drawing.Size(75, 33);
             this.btnRename.TabIndex = 7;
@@ -140,6 +144,7 @@ namespace Messenger
             // 
             this.timeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.timeLabel.AutoSize = true;
+            this.timeLabel.BackColor = System.Drawing.Color.Transparent;
             this.timeLabel.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.timeLabel.ForeColor = System.Drawing.Color.Green;
             this.timeLabel.Location = new System.Drawing.Point(39, 440);
@@ -152,6 +157,7 @@ namespace Messenger
             // 
             this.dateLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.dateLabel.AutoSize = true;
+            this.dateLabel.BackColor = System.Drawing.Color.Transparent;
             this.dateLabel.Font = new System.Drawing.Font("Consolas", 11.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.dateLabel.ForeColor = System.Drawing.SystemColors.Highlight;
             this.dateLabel.Location = new System.Drawing.Point(39, 471);
@@ -164,6 +170,7 @@ namespace Messenger
             // 
             this.authorLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.authorLabel.AutoSize = true;
+            this.authorLabel.BackColor = System.Drawing.Color.Transparent;
             this.authorLabel.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.authorLabel.ForeColor = System.Drawing.Color.Silver;
             this.authorLabel.Location = new System.Drawing.Point(20, 681);
@@ -176,6 +183,7 @@ namespace Messenger
             // 
             this.dayLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.dayLabel.AutoSize = true;
+            this.dayLabel.BackColor = System.Drawing.Color.Transparent;
             this.dayLabel.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.dayLabel.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.dayLabel.Location = new System.Drawing.Point(49, 496);
@@ -184,12 +192,25 @@ namespace Messenger
             this.dayLabel.TabIndex = 11;
             this.dayLabel.Text = "Thứ Hai";
             // 
+            // userNameLabel
+            // 
+            this.userNameLabel.AutoSize = true;
+            this.userNameLabel.BackColor = System.Drawing.Color.Transparent;
+            this.userNameLabel.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.userNameLabel.ForeColor = System.Drawing.Color.DarkViolet;
+            this.userNameLabel.Location = new System.Drawing.Point(2, 6);
+            this.userNameLabel.Name = "userNameLabel";
+            this.userNameLabel.Size = new System.Drawing.Size(99, 19);
+            this.userNameLabel.TabIndex = 12;
+            this.userNameLabel.Text = "Tên bạn: User";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(711, 701);
             this.Controls.Add(this.dayLabel);
+            this.Controls.Add(this.userNameLabel);
             this.Controls.Add(this.authorLabel);
             this.Controls.Add(this.dateLabel);
             this.Controls.Add(this.timeLabel);
@@ -226,6 +247,6 @@ namespace Messenger
         private System.Windows.Forms.Label dateLabel;
         private System.Windows.Forms.Label authorLabel;
         private System.Windows.Forms.Label dayLabel;
-
+        private System.Windows.Forms.Label userNameLabel;
     }
 }

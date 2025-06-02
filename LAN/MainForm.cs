@@ -227,7 +227,6 @@ namespace Messenger
             // Xử lý sự kiện nhấp đúp chuột vào biểu tượng khay hệ thống để khôi phục ứng dụng
             _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
         }
-
         // Phương thức được gọi khi form thay đổi kích thước
         private void MainForm_Resize(object sender, EventArgs e)
         {
@@ -640,8 +639,9 @@ namespace Messenger
                 _myAvatar = SystemIcons.Question.ToBitmap();
             }
 
-            this.Text = $"Messenger - {_myUserName}";
-
+            this.Text = $"Messenger";
+            userNameLabel.Text = $"Tên bạn: {_myUserName}";
+            
             try
             {
                 // Khởi tạo NetworkService ở đây, sau khi _myUserName đã được xác định
