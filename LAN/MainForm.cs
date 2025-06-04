@@ -16,6 +16,7 @@ using System.Diagnostics;
 using Messenger.Properties;
 using System.Net.NetworkInformation;
 
+
 namespace Messenger
 {
     public partial class MainForm : Form
@@ -53,7 +54,7 @@ namespace Messenger
         private bool _isSendingMessage = false; // Biến cờ cho biết ứng dụng đang trong quá trình gửi tin nhắn
         private readonly HashSet<Guid> _displayedMessageIds = new HashSet<Guid>(); // HashSet để theo dõi các ID tin nhắn đã hiển thị, tránh trùng lặp
         private const int TopListBoxMargin = 12;
-
+        private int _unreadMessageCount = 0; // Thêm biến đếm tin nhắn chưa đọc
         public MainForm()
         {
             InitializeComponent(); // Gọi phương thức được tạo bởi trình thiết kế để khởi tạo các thành phần giao diện
@@ -115,7 +116,6 @@ namespace Messenger
             _chatHistoryDirectory = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "LOGCHAT"); // Đường dẫn đến thư mục "LOG" cùng cấp với tệp thực thi để lưu lịch sử chat
             Directory.CreateDirectory(_profileDirectory); // Tạo thư mục hồ sơ nếu chưa tồn tại
             Directory.CreateDirectory(_chatHistoryDirectory); // Tạo thư mục lịch sử chat nếu chưa tồn tại
-
             InitializeSystemTray(); // Gọi phương thức để khởi tạo biểu tượng khay hệ thống
         }
 
@@ -226,6 +226,7 @@ namespace Messenger
 
             // Xử lý sự kiện nhấp đúp chuột vào biểu tượng khay hệ thống để khôi phục ứng dụng
             _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
+            UpdateTrayIcon();
         }
         // Phương thức được gọi khi form thay đổi kích thước
         private void MainForm_Resize(object sender, EventArgs e)
@@ -234,6 +235,7 @@ namespace Messenger
             {
                 this.Hide();
                 _trayIcon.Visible = true;
+                UpdateTrayIcon(); // Cập nhật text của tray icon khi thu nhỏ
                 if (_trayIcon.Icon != null)
                 {
                     var balloon = new CustomBalloonForm(
@@ -270,6 +272,8 @@ namespace Messenger
             this.Show(); // Hiển thị form
             this.WindowState = FormWindowState.Normal; // Đặt trạng thái cửa sổ về bình thường
             _trayIcon.Visible = false; // Ẩn biểu tượng khay hệ thống
+            _unreadMessageCount = 0; // Reset số lượng tin nhắn chưa đọc
+            UpdateTrayIcon(); // Cập nhật text của tray icon (xóa số lượng tin nhắn chưa đọc)
         }
 
         // Phương thức thoát ứng dụng
@@ -787,6 +791,7 @@ namespace Messenger
                 this.WindowState = FormWindowState.Minimized;
                 this.Hide();
                 _trayIcon.Visible = true;
+                UpdateTrayIcon(); // Cập nhật text của tray icon khi đóng (thu nhỏ)
                 if (_trayIcon.Icon != null)
                 {
                     var balloon = new CustomBalloonForm(
@@ -863,14 +868,21 @@ namespace Messenger
                     AddMessageToChat(e.Message);
                     _displayedMessageIds.Add(e.Message.MessageId);
 
-                    // NEW LOGIC: Show notification if minimized
+                    // NEW LOGIC: Hiển thị thông báo nếu thu nhỏ
                     if (this.WindowState == FormWindowState.Minimized)
                     {
+                        _unreadMessageCount++; // Tăng số lượng tin nhắn chưa đọc
+                        UpdateTrayIcon(); // Cập nhật text của tray icon
                         ShowNewMessageNotification(e.Message);
                     }
                 }
                 else
                 {
+                    if (this.WindowState == FormWindowState.Minimized)
+                    {
+                        _unreadMessageCount++; // Vẫn tăng số tin nhắn chưa đọc
+                        UpdateTrayIcon(); // Thay đổi từ UpdateTrayIconText() sang UpdateTrayIcon()
+                    }
                     Debug.WriteLine($"[NetworkService_MessageReceived] Bỏ qua tin nhắn trùng lặp (MessageId: {e.Message.MessageId})");
                 }
             }
@@ -1580,6 +1592,158 @@ namespace Messenger
             // Hiển thị thông báo từ dưới lên
             balloon.ShowFromBottom(title, content, this.Icon);
             Debug.WriteLine($"[ShowNewMessageNotification] Đã hiển thị thông báo tin nhắn mới từ {message.SenderName}.");
+        }
+        private Icon CreateTextIcon(string text, Icon baseIcon)
+        {
+            Bitmap bitmap = null;
+            Graphics graphics = null;
+            Icon newIcon = null;
+            Bitmap baseBitmapScaled = null; // Khai báo ở đây để accessible trong finally
+
+            try
+            {
+                // Kích thước mục tiêu cho bitmap và icon.
+                // NotifyIcon thường hiển thị ở 16x16, 24x24, 32x32.
+                // Vẽ trên một bitmap lớn hơn để có chất lượng tốt khi Windows scale xuống.
+                int targetIconSize = 64; // Kích thước để vẽ, Windows sẽ scale nó
+
+                // Đảm bảo icon gốc được vẽ lên bitmap có chất lượng tốt
+                if (baseIcon != null)
+                {
+                    baseBitmapScaled = baseIcon.ToBitmap();
+                    if (baseBitmapScaled.Width < targetIconSize || baseBitmapScaled.Height < targetIconSize)
+                    {
+                        // Scale base icon lên kích thước targetIconSize nếu nó nhỏ hơn
+                        baseBitmapScaled = new Bitmap(baseBitmapScaled, targetIconSize, targetIconSize);
+                    }
+                }
+                else
+                {
+                    // Fallback nếu baseIcon là null, có thể dùng SystemIcons.Application
+                    baseBitmapScaled = SystemIcons.Application.ToBitmap();
+                    baseBitmapScaled = new Bitmap(baseBitmapScaled, targetIconSize, targetIconSize);
+                }
+
+                bitmap = new Bitmap(targetIconSize, targetIconSize);
+                graphics = Graphics.FromImage(bitmap);
+
+                // Cài đặt chất lượng vẽ cao
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit; // Thường tốt hơn cho văn bản trên Windows
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                // Vẽ icon gốc lên bitmap.
+                graphics.DrawImage(baseBitmapScaled, 0, 0, targetIconSize, targetIconSize);
+
+                // --- Bắt đầu vẽ "badge" số tin nhắn ---
+                // Chỉ vẽ nếu có tin nhắn chưa đọc và không phải là "0"
+                if (!string.IsNullOrEmpty(text) && text != "0" && int.TryParse(text, out int messageCount) && messageCount > 0)
+                {
+                    // Giới hạn số tin nhắn hiển thị để tránh quá dài
+                    if (messageCount > 99)
+                    {
+                        text = "99+";
+                    }
+
+                    // Kích thước và vị trí của hình tròn nền (badge)
+                    // Điều chỉnh badgeDiameter để nó chiếm khoảng 40-50% của targetIconSize, 
+                    // và không quá lớn để che icon chính.
+                    float badgeDiameter = targetIconSize * 0.45f;
+                    // Có thể tăng nhẹ nếu số tin nhắn có nhiều chữ số
+                    if (text.Length > 2) badgeDiameter = targetIconSize * 0.5f;
+
+                    // Vị trí badge ở góc dưới bên phải
+                    // Điều chỉnh để nó nằm gọn trong góc
+                    float badgePadding = targetIconSize * 0.05f; // Khoảng đệm nhỏ từ mép icon
+                    float badgeX = targetIconSize - badgeDiameter - badgePadding;
+                    float badgeY = targetIconSize - badgeDiameter - badgePadding;
+
+                    using (SolidBrush backgroundBrush = new SolidBrush(Color.Red)) // Màu nền đỏ cho số
+                    {
+                        // Vẽ hình tròn nền
+                        graphics.FillEllipse(backgroundBrush, badgeX, badgeY, badgeDiameter, badgeDiameter);
+
+                        // Vẽ viền trắng xung quanh hình tròn để làm nổi bật (tùy chọn, có thể bỏ nếu không thích)
+                        float borderThickness = 1.5f; // Độ dày của viền
+                        using (Pen borderPen = new Pen(Color.White, borderThickness))
+                        {
+                            graphics.DrawEllipse(borderPen, badgeX, badgeY, badgeDiameter, badgeDiameter);
+                        }
+                    }
+
+                    // Thiết lập font và màu cho số
+                    // Điều chỉnh kích thước font để vừa với kích thước badge
+                    float fontSize = badgeDiameter * 0.5f; // Kích thước font, khoảng 50% đường kính badge
+                    if (text.Length > 2) fontSize = badgeDiameter * 0.4f; // Giảm nếu số có nhiều chữ số (e.g., "99+")
+
+                    using (Font font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel)) // Font chữ hiện đại hơn
+                    {
+                        using (SolidBrush textBrush = new SolidBrush(Color.White)) // Màu chữ trắng
+                        {
+                            StringFormat sf = new StringFormat
+                            {
+                                Alignment = StringAlignment.Center,      // Căn giữa theo chiều ngang
+                                LineAlignment = StringAlignment.Center   // Căn giữa theo chiều dọc
+                            };
+
+                            // Vùng để vẽ văn bản (ở giữa hình tròn nền)
+                            RectangleF textRect = new RectangleF(badgeX, badgeY, badgeDiameter, badgeDiameter);
+                            graphics.DrawString(text, font, textBrush, textRect, sf);
+                        }
+                    }
+                }
+                // --- Kết thúc vẽ "badge" số tin nhắn ---
+
+                // Chuyển Bitmap đã vẽ thành Icon
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    // Lưu bitmap dưới dạng PNG để giữ được kênh alpha (độ trong suốt)
+                    bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    newIcon = new Icon(ms); // Tạo Icon từ MemoryStream
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Lỗi khi tạo icon với văn bản: {ex.Message}");
+                return baseIcon; // Trả về icon gốc nếu có lỗi
+            }
+            finally
+            {
+                graphics?.Dispose();
+                bitmap?.Dispose();
+                baseBitmapScaled?.Dispose(); // Rất quan trọng: giải phóng bitmap gốc đã được scale
+            }
+            return newIcon;
+        }
+        private void UpdateTrayIcon()
+        {
+            if (_trayIcon == null) return;
+
+            string baseText = "Messenger";
+            Icon currentIcon = null;
+
+            if (_unreadMessageCount > 0)
+            {
+                _trayIcon.Text = $"{baseText} ({_unreadMessageCount} tin nhắn mới)";
+                // Tạo icon mới với số tin nhắn
+                currentIcon = CreateTextIcon(_unreadMessageCount.ToString(), this.Icon);
+            }
+            else
+            {
+                _trayIcon.Text = baseText;
+                // Sử dụng icon mặc định của form
+                currentIcon = this.Icon;
+            }
+
+            // Giải phóng icon cũ trước khi gán icon mới để tránh rò rỉ bộ nhớ
+            if (_trayIcon.Icon != null && _trayIcon.Icon != this.Icon) // Chỉ giải phóng nếu đó là icon động đã tạo
+            {
+                _trayIcon.Icon.Dispose();
+            }
+
+            _trayIcon.Icon = currentIcon;
         }
     }
 }
