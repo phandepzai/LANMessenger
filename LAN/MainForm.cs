@@ -262,7 +262,7 @@ namespace Messenger
                     msg.CalculatedTotalSize = SizeF.Empty;
                     msg.LastCalculatedWidth = -1;
                 }
-                chatListBox.Refresh(); // Force redraw of all items
+                chatListBox.Refresh(); // Buộc vẽ lại tất cả các mục
             }
         }
 
@@ -270,6 +270,7 @@ namespace Messenger
         private void RestoreFromTray()
         {
             this.Show(); // Hiển thị form
+            chatListBox.Refresh();// Buộc vẽ lại tất cả các mục
             this.WindowState = FormWindowState.Normal; // Đặt trạng thái cửa sổ về bình thường
             _trayIcon.Visible = false; // Ẩn biểu tượng khay hệ thống
             _unreadMessageCount = 0; // Reset số lượng tin nhắn chưa đọc
