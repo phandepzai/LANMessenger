@@ -15,10 +15,15 @@ namespace Messenger
         // Biểu thức chính quy để tìm kiếm URL trong nội dung tin nhắn.
         // Nhận diện URL (http, https), địa chỉ IP, và cả đường dẫn file Windows (ổ đĩa hoặc UNC)
         private static readonly Regex UrlRegex = new Regex(
-            @"((http|https)://((([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})|(\d{1,3}(\.\d{1,3}){3}))(:\d+)?(/[^\s]*)?)" +
-            @"|([a-zA-Z]:\\[^\s]+)" +
-            @"|(\\\\[^\s]+)",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        // Phần ban đầu cho http/https URL (vẫn giữ lại)
+        @"((http|https)://((([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})|(\d{1,3}(\.\d{1,3}){3}))(:\d+)?(/[^\s]*)?)" +
+        // Các đường dẫn file Windows và UNC (vẫn giữ lại)
+        @"|([a-zA-Z]:\\[^\s]+)" +
+        @"|(\\\\[^\s]+)" +
+        // Mẫu mới để khớp với địa chỉ IP có hoặc không có cổng và đường dẫn
+        // Lưu ý: \b được sử dụng ở đầu để đảm bảo khớp một IP hoàn chỉnh
+        @"|(\b\d{1,3}(\.\d{1,3}){3}(:\d+)?(/[^\s]*)?\b)", // Đã thay đổi và thêm phần này
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
         // Màu nền cho tin nhắn của người dùng hiện tại.
         private static readonly SolidBrush MyMessageBackgroundBrush = new SolidBrush(Color.FromArgb(152, 251, 152)); // Màu xanh lá cây nhạt
         // Màu nền cho tin nhắn của người dùng khác.
