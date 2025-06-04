@@ -13,7 +13,12 @@ namespace Messenger
     public static class MessageRenderer
     {
         // Biểu thức chính quy để tìm kiếm URL trong nội dung tin nhắn.
-        private static readonly Regex UrlRegex = new Regex(@"\b(?:https?://|www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(?:/\S*)?\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        // Nhận diện URL (http, https), địa chỉ IP, và cả đường dẫn file Windows (ổ đĩa hoặc UNC)
+        private static readonly Regex UrlRegex = new Regex(
+            @"((http|https)://((([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})|(\d{1,3}(\.\d{1,3}){3}))(:\d+)?(/[^\s]*)?)" +
+            @"|([a-zA-Z]:\\[^\s]+)" +
+            @"|(\\\\[^\s]+)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
         // Màu nền cho tin nhắn của người dùng hiện tại.
         private static readonly SolidBrush MyMessageBackgroundBrush = new SolidBrush(Color.FromArgb(152, 251, 152)); // Màu xanh lá cây nhạt
         // Màu nền cho tin nhắn của người dùng khác.
