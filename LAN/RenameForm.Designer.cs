@@ -1,4 +1,6 @@
-﻿namespace Messenger
+﻿using System.Windows.Forms;
+
+namespace Messenger
 {
     partial class RenameForm
     {
@@ -11,15 +13,6 @@
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
         #region Windows Form Designer generated code
 
         /// <summary>
@@ -33,6 +26,8 @@
             this.txtNewName = new System.Windows.Forms.TextBox();
             this.btnOK = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.errorProvider = new System.Windows.Forms.ErrorProvider();
+            this.errorProvider.ContainerControl = this;
             this.SuspendLayout();
             // 
             // lblInstruction
@@ -110,7 +105,7 @@
             this.Load += new System.EventHandler(this.RenameForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
-
+            
         }
 
         #endregion
@@ -119,5 +114,6 @@
         private System.Windows.Forms.TextBox txtNewName;
         private System.Windows.Forms.Button btnOK;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.ErrorProvider errorProvider;
     }
 }

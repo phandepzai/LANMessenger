@@ -4,7 +4,6 @@ using System.Windows.Forms;
 namespace Messenger
 {
     // Định nghĩa một partial class (lớp không hoàn chỉnh) cho form đổi tên.
-    // Partial class cho phép chia định nghĩa của một lớp thành nhiều file.
     public partial class RenameForm : Form
     {
         // Thuộc tính công khai chỉ đọc để lấy tên người dùng mới sau khi form được đóng với kết quả OK.
@@ -19,8 +18,23 @@ namespace Messenger
             txtNewName.Text = currentUserName;
             // Chọn toàn bộ văn bản trong textbox để người dùng có thể dễ dàng chỉnh sửa.
             txtNewName.SelectAll();
+            // Thêm sự kiện TextChanged để kiểm tra theo thời gian thực
+            txtNewName.TextChanged += TxtNewName_TextChanged;
         }
-
+        // Xử lý sự kiện TextChanged
+        private void TxtNewName_TextChanged(object sender, EventArgs e)
+        {
+            if (txtNewName.Text.Length > 15)
+            {
+                errorProvider.SetError(txtNewName, "Tên không được dài quá 15 ký tự.");
+                btnOK.Enabled = false; // Vô hiệu hóa nút OK
+            }
+            else
+            {
+                errorProvider.SetError(txtNewName, ""); // Xóa thông báo lỗi
+                btnOK.Enabled = !string.IsNullOrWhiteSpace(txtNewName.Text); // Chỉ bật OK nếu có nội dung
+            }
+        }
         // Sự kiện được gọi khi người dùng click vào nút OK.
         private void BtnOK_Click(object sender, EventArgs e)
         {
@@ -58,11 +72,19 @@ namespace Messenger
             DialogResult = DialogResult.Cancel;
             // Lưu ý: Không cần gọi Close() một cách явно; thuộc tính DialogResult sẽ tự động đóng form.
         }
-
+        // Override phương thức Dispose để giải phóng ErrorProvider
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+                errorProvider.Dispose(); // Giải phóng ErrorProvider
+            }
+            base.Dispose(disposing);
+        }
         // Sự kiện được gọi khi form RenameForm được load (hiển thị).
         private void RenameForm_Load(object sender, EventArgs e)
         {
-            // Hiện tại không có logic đặc biệt nào được thực hiện khi form được load.
         }
     }
 }

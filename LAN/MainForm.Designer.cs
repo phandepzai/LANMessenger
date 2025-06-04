@@ -88,7 +88,7 @@ namespace Messenger
             this.onlineUsersListBox.ForeColor = System.Drawing.Color.ForestGreen;
             this.onlineUsersListBox.FormattingEnabled = true;
             this.onlineUsersListBox.ItemHeight = 17;
-            this.onlineUsersListBox.Location = new System.Drawing.Point(9, 84);
+            this.onlineUsersListBox.Location = new System.Drawing.Point(9, 94);
             this.onlineUsersListBox.Margin = new System.Windows.Forms.Padding(2);
             this.onlineUsersListBox.Name = "onlineUsersListBox";
             this.onlineUsersListBox.Size = new System.Drawing.Size(149, 272);
@@ -102,9 +102,9 @@ namespace Messenger
             this.selectedPeerLabel.Location = new System.Drawing.Point(168, 3);
             this.selectedPeerLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.selectedPeerLabel.Name = "selectedPeerLabel";
-            this.selectedPeerLabel.Size = new System.Drawing.Size(109, 19);
+            this.selectedPeerLabel.Size = new System.Drawing.Size(84, 19);
             this.selectedPeerLabel.TabIndex = 4;
-            this.selectedPeerLabel.Text = "Đang chat với: ";
+            this.selectedPeerLabel.Text = "Đang chat: ";
             // 
             // _typingStatusLabel
             // 
@@ -132,7 +132,7 @@ namespace Messenger
             // 
             // btnRename
             // 
-            this.btnRename.Location = new System.Drawing.Point(35, 40);
+            this.btnRename.Location = new System.Drawing.Point(34, 50);
             this.btnRename.Name = "btnRename";
             this.btnRename.Size = new System.Drawing.Size(75, 33);
             this.btnRename.TabIndex = 7;
@@ -197,12 +197,14 @@ namespace Messenger
             this.userNameLabel.AutoSize = true;
             this.userNameLabel.BackColor = System.Drawing.Color.Transparent;
             this.userNameLabel.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.userNameLabel.ForeColor = System.Drawing.Color.DarkViolet;
-            this.userNameLabel.Location = new System.Drawing.Point(2, 6);
+            this.userNameLabel.ForeColor = System.Drawing.Color.DarkSlateGray;
+            this.userNameLabel.Location = new System.Drawing.Point(30, 4);
             this.userNameLabel.Name = "userNameLabel";
-            this.userNameLabel.Size = new System.Drawing.Size(99, 19);
+            this.userNameLabel.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.userNameLabel.Size = new System.Drawing.Size(61, 19);
             this.userNameLabel.TabIndex = 12;
-            this.userNameLabel.Text = "Tên bạn: User";
+            this.userNameLabel.Text = "Tên bạn";
+            this.userNameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // MainForm
             // 

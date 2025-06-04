@@ -638,10 +638,8 @@ namespace Messenger
                 Debug.WriteLine($"Lỗi tải default_avatar.png: {ex.Message}");
                 _myAvatar = SystemIcons.Question.ToBitmap();
             }
-
             this.Text = $"Messenger";
-            userNameLabel.Text = $"Tên bạn: {_myUserName}";
-            
+            userNameLabel.Text = $"{_myUserName}\n(Tôi)";
             try
             {
                 // Khởi tạo NetworkService ở đây, sau khi _myUserName đã được xác định
@@ -665,7 +663,7 @@ namespace Messenger
                 Debug.WriteLine("[MainForm_Load] Đang tải lịch sử trò chuyện công cộng.");
                 LoadChatHistory("Broadcast");
                 _currentPeer = "Broadcast";
-                selectedPeerLabel.Text = "Đang trò chuyện với: Broadcast";
+                selectedPeerLabel.Text = "Trò chuyện: Broadcast";
                 selectedPeerLabel.Tag = "Broadcast";
                 onlineUsersListBox.SelectedItem = "Broadcast"; // Chọn Broadcast trong danh sách
             }
@@ -698,14 +696,13 @@ namespace Messenger
                             MessageBox.Show("Tên không được chứa ký tự ':' vì nó được sử dụng làm dấu phân cách trong giao thức mạng.", "Tên không hợp lệ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return; // Dừng lại nếu tên không hợp lệ
                         }
-
                         try
                         {
                             string oldName = _myUserName; // Lưu tên cũ để sử dụng sau này
                             _myUserName = newName; // Cập nhật tên người dùng hiện tại
                             SaveUserName(_myUserName); // Lưu tên người dùng mới vào file
-                            this.Text = $"Messenger - {_myUserName}"; // Cập nhật tiêu đề form
-
+                            this.Text = $"Messenger"; // Cập nhật tiêu đề form // Đã thay đổi dòng này để giữ tính nhất quán, hoặc sử dụng $"Messenger - {_myUserName}" nếu bạn thích
+                            userNameLabel.Text = $"{_myUserName}\n(Tôi)"; // <<<< THÊM DÒNG NÀY ĐỂ CẬP NHẬT LABEL TÊN KHI THAY ĐỔI
                             // Nếu dịch vụ mạng đã được khởi tạo
                             if (_networkService != null)
                             {
@@ -719,7 +716,7 @@ namespace Messenger
                                 if (_currentPeer == oldName)
                                 {
                                     _currentPeer = _myUserName;
-                                    selectedPeerLabel.Text = $"Đang trò chuyện với: {_myUserName}";
+                                    selectedPeerLabel.Text = $"Trò chuyện: {_myUserName}";
                                     selectedPeerLabel.Tag = _myUserName;
                                     LoadChatHistory(_myUserName); // Tải lại lịch sử chat với tên mới
                                 }
@@ -903,13 +900,7 @@ namespace Messenger
         private void HandlePeerDiscovered(PeerDiscoveryEventArgs e)
         {
             Debug.WriteLine($"[HandlePeerDiscovered] Xử lý peer: {e.PeerName}");
-            UpdateOnlineUsersList(); // Cập nhật danh sách người dùng trực tuyến
-                                     // Nếu có tin nhắn từ peer này trong lịch sử chat hiện tại, tải lại lịch sử
-                                     // No need to LoadChatHistory here, as it will be loaded when peer is selected
-                                     // if (_chatMessages.Any(m => m.SenderName == e.PeerName))
-                                     // {
-                                     //     LoadChatHistory(e.PeerName);
-                                     // }
+            UpdateOnlineUsersList(); // Cập nhật danh sách người dùng trực tuyến                                     
         }
 
         // Phương thức cập nhật danh sách người dùng trực tuyến trên giao diện
@@ -927,7 +918,6 @@ namespace Messenger
 
             _onlineUsers.Clear(); // Xóa danh sách người dùng trực tuyến hiện có
             _onlineUsers.Add("Broadcast"); // Thêm mục "Broadcast"
-                                           // Thêm các peer đang hoạt động vào danh sách, sắp xếp theo tên và loại bỏ người dùng hiện tại
             foreach (var peerName in currentPeers.OrderBy(p => p))
             {
                 if (peerName != _myUserName)
@@ -937,7 +927,7 @@ namespace Messenger
             }
             onlineUsersListBox.DataSource = null; // Đặt DataSource về null để làm mới
             onlineUsersListBox.DataSource = _onlineUsers; // Gán lại DataSource với danh sách đã cập nhật
-            Debug.WriteLine($"[UpdateOnlineUsersList] Đã cập nhật _onlineUsers: {string.Join(", ", _onlineUsers)}");
+            Debug.WriteLine($"[UpdateOnlineUsersList] Đã cập nhật danh sách người dùng: {string.Join(", ", _onlineUsers)}");
 
             // Khôi phục peer đã được chọn trước đó, nếu nó vẫn còn trong danh sách
             if (!string.IsNullOrEmpty(previousSelectedPeer) && _onlineUsers.Contains(previousSelectedPeer))
@@ -971,18 +961,10 @@ namespace Messenger
         {
             UpdateOnlineUsersList(); // Cập nhật lại danh sách người dùng trực tuyến sau khi một peer ngắt kết nối
 
-            // Cố gắng tìm một tên mới cho peer vừa ngắt kết nối trong danh sách các peer đang hoạt động.
-            // Điều này có thể xảy ra nếu một peer đổi tên và sau đó ngắt kết nối, hoặc có sự trùng lặp IP.
-            // This logic might be problematic if a peer truly disconnects and another peer happens to have the same name.
-            // It's generally better to rely on heartbeats for active status.
-            // string newName = _networkService.GetActivePeerNames().FirstOrDefault(n => !_onlineUsers.Contains(e.PeerName) && n != e.PeerName);
-            // if (!string.IsNullOrEmpty(newName)) { ... } else { ... }
-
-            // Simplified logic: just announce disconnection and switch to Broadcast if the disconnected peer was active
             if (_currentPeer == e.PeerName)
             {
                 _currentPeer = "Broadcast"; // Chuyển về chế độ trò chuyện Broadcast
-                selectedPeerLabel.Text = $"Đang trò chuyện với: Broadcast";
+                selectedPeerLabel.Text = $"Trò chuyện: Broadcast";
                 selectedPeerLabel.Tag = "Broadcast";
                 LoadChatHistory("Broadcast"); // Tải lịch sử chat Broadcast
             }
@@ -1106,8 +1088,6 @@ namespace Messenger
             catch (Exception ex)
             {
                 Debug.WriteLine($"Lỗi gửi trạng thái typing: {ex.Message}");
-                // Optionally, show a message box for critical errors
-                // MessageBox.Show($"Không thể gửi trạng thái gõ: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -1186,9 +1166,9 @@ namespace Messenger
                 // Nếu người dùng được chọn khác với người đang trò chuyện hiện tại
                 if (_currentPeer != selectedPeer)
                 {
-                    Debug.WriteLine($"[OnlineUsersListBox_SelectedIndexChanged] Peer đã thay đổi từ {_currentPeer} to {selectedPeer}");
+                    Debug.WriteLine($"[OnlineUsersListBox_SelectedIndexChanged] Người dùng đã thay đổi từ {_currentPeer} sang {selectedPeer}");
                     _currentPeer = selectedPeer; // Cập nhật peer hiện tại
-                    selectedPeerLabel.Text = $"Đang trò chuyện với: {selectedPeer}"; // Cập nhật nhãn hiển thị peer
+                    selectedPeerLabel.Text = $"Trò chuyện: {selectedPeer}"; // Cập nhật nhãn hiển thị peer
                     selectedPeerLabel.Tag = selectedPeer; // Cập nhật tag của nhãn
 
                     LoadChatHistory(selectedPeer); // Tải lịch sử chat với peer mới
@@ -1199,7 +1179,7 @@ namespace Messenger
                 }
                 else
                 {
-                    Debug.WriteLine($"[OnlineUsersListBox_SelectedIndexChanged] Peer không thay đổi: {selectedPeer}");
+                    Debug.WriteLine($"[OnlineUsersListBox_SelectedIndexChanged] Người dùng không thay đổi: {selectedPeer}");
                     // Nếu vẫn là cùng một peer (ví dụ: nhấp lại vào "Broadcast"), tải lại lịch sử Broadcast
                     if (selectedPeer == "Broadcast")
                     {
@@ -1254,7 +1234,7 @@ namespace Messenger
                 Debug.WriteLine($"[sendButton_Click] Lỗi không mong muốn khi gửi tin nhắn: {ex.Message}");
                 string errorMsg = selectedPeer == "Broadcast"
                     ? "Không thể gửi tin nhắn Broadcast. Vui lòng kiểm tra cấu hình mạng hoặc tường lửa."
-                    : $"Không thể gửi tin nhắn đến {selectedPeer}. Vui lòng kiểm tra trạng thái peer hoặc mạng.";
+                    : $"Không thể gửi tin nhắn đến {selectedPeer}. Vui lòng kiểm tra trạng thái người dùng hoặc mạng.";
                 MessageBox.Show(errorMsg, "Lỗi Gửi Tin Nhắn", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 AddMessageToChat(new ChatMessage("Hệ thống", errorMsg, false, ChatMessage.MessageType.Error));
             }
@@ -1380,11 +1360,11 @@ namespace Messenger
             try
             {
                 MessageRenderer.DrawMessage(e.Graphics, bounds, message, e.State, chatListBox.Font, avatar);
-                Debug.WriteLine($"Vẽ tin nhắn tại index {e.Index}, Bounds.Y = {bounds.Y}, Height = {bounds.Height}, Visible = {bounds.IntersectsWith(chatListBox.ClientRectangle)}");
+                Debug.WriteLine($"Vẽ tin nhắn tại chỉ mục {e.Index}, Tọa độ Y = {bounds.Y}, Chiều cao = {bounds.Height}, Hiển thị = {bounds.IntersectsWith(chatListBox.ClientRectangle)}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Lỗi vẽ tin nhắn tại index {e.Index}: {ex.Message}");
+                Debug.WriteLine($"Lỗi vẽ tin nhắn tại chỉ mục {e.Index}: {ex.Message}");
                 e.Graphics.Clear(SystemColors.Window);
             }
         }
@@ -1430,14 +1410,14 @@ namespace Messenger
                             (int)message.CalculatedContentSize.Height + (2 * verticalBubblePadding));
                     }
 
-                    // Tính toán vị trí của nội dung bên trong bubble
+                    // Tính toán vị trí của nội dung bên trong bong bóng chat
                     RectangleF contentRect = new RectangleF(
                         bubbleRect.X + horizontalBubblePadding,
                         bubbleRect.Y + verticalBubblePadding,
                         message.CalculatedContentSize.Width,
                         message.CalculatedContentSize.Height);
 
-                    Debug.WriteLine($"[ChatListBox_MouseClick] Bấm vào ({e.X}, {e.Y}), IsMyMessage: {message.IsMyMessage}, SenderNameHeight: {senderNameHeight}, ContentRect: X={contentRect.X}, Y={contentRect.Y}, Width={contentRect.Width}, Height={contentRect.Height}");
+                    Debug.WriteLine($"[ChatListBox_MouseClick] Bấm vào ({e.X}, {e.Y}), Là tin nhắn của tôi: {message.IsMyMessage}, Chiều cao tên người gửi: {senderNameHeight}, Vùng nội dung: X={contentRect.X}, Y={contentRect.Y}, Rộng={contentRect.Width}, Cao={contentRect.Height}");
                     // Nếu không có URL trong tin nhắn
                     if (!message.UrlRegions.Any())
                     {
@@ -1535,11 +1515,11 @@ namespace Messenger
                     message.CalculatedContentSize.Width,
                     message.CalculatedContentSize.Height);
 
-                Debug.WriteLine($"[ChatListBox_MouseMove] Chuột vào ({e.X}, {e.Y}), IsMyMessage: {message.IsMyMessage}, SenderName: {message.SenderName}, SenderNameHeight: {senderNameHeight}, ContentRect: X={contentRect.X}, Y={contentRect.Y}, Width={contentRect.Width}, Height={contentRect.Height}");
+                Debug.WriteLine($"[ChatListBox_MouseMove] Chuột vào ({e.X}, {e.Y}), Là tin nhắn của tôi: {message.IsMyMessage}, Tên người gửi: {message.SenderName}, Chiều cao tên người gửi: {senderNameHeight}, Vùng nội dung: X={contentRect.X}, Y={contentRect.Y}, Rộng={contentRect.Width}, Cao={contentRect.Height}");
 
                 if (!message.UrlRegions.Any())
                 {
-                    Debug.WriteLine($"[ChatListBox_MouseMove] Không có liên kết ở trong tin nhắn: {message.Content}");
+                    Debug.WriteLine($"[ChatListBox_MouseMove] Không có liên kết nào trong tin nhắn: {message.Content}");
                 }
                 else
                 {
