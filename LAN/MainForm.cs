@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -269,13 +269,33 @@ namespace Messenger
         // Phương thức khôi phục ứng dụng từ khay hệ thống
         private void RestoreFromTray()
         {
-            this.Show(); // Hiển thị form
-            chatListBox.Refresh();// Buộc vẽ lại tất cả các mục
-            this.WindowState = FormWindowState.Normal; // Đặt trạng thái cửa sổ về bình thường
-            _trayIcon.Visible = false; // Ẩn biểu tượng khay hệ thống
-            _unreadMessageCount = 0; // Reset số lượng tin nhắn chưa đọc
-            UpdateTrayIcon(); // Cập nhật text của tray icon (xóa số lượng tin nhắn chưa đọc)
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+            _trayIcon.Visible = false;
+            _unreadMessageCount = 0;
+            UpdateTrayIcon();
+
+            // Kiểm tra tính toàn vẹn của _chatMessages
+            EnsureMessageIntegrity();
+
+            // Xóa và tái tạo danh sách tin nhắn trong chatListBox
+            chatListBox.Items.Clear();
+            foreach (var message in _chatMessages)
+            {
+                if (message.Type == ChatMessage.MessageType.System || message.Type == ChatMessage.MessageType.Text)
+                {
+                    chatListBox.Items.Add(message);
+                }
+            }
+
+            if (chatListBox.Items.Count > 0)
+            {
+                chatListBox.TopIndex = chatListBox.Items.Count - 1;
+            }
+            chatListBox.Refresh();
+            Debug.WriteLine($"[RestoreFromTray] Đã tải lại {chatListBox.Items.Count} tin nhắn Broadcast");
         }
+
 
         // Phương thức thoát ứng dụng
         private void ExitApplication()
@@ -309,7 +329,22 @@ namespace Messenger
             }
             return null; // Trả về null nếu không tải được tên người dùng
         }
+        private void EnsureMessageIntegrity()
+        {
+            var invalidMessages = _chatMessages.Where(m => !_displayedMessageIds.Contains(m.MessageId)).ToList();
+            foreach (var message in invalidMessages)
+            {
+                Debug.WriteLine($"[EnsureMessageIntegrity] Xóa tin nhắn không hợp lệ: {message.MessageId}");
+                _chatMessages.Remove(message);
+            }
 
+            var invalidIds = _displayedMessageIds.Where(id => !_chatMessages.Any(m => m.MessageId == id)).ToList();
+            foreach (var id in invalidIds)
+            {
+                Debug.WriteLine($"[EnsureMessageIntegrity] Xóa ID tin nhắn không hợp lệ: {id}");
+                _displayedMessageIds.Remove(id);
+            }
+        }
         // Phương thức lưu tên người dùng vào tệp tin
         private void SaveUserName(string userName)
         {
@@ -645,9 +680,9 @@ namespace Messenger
             }
             this.Text = $"Messenger";
             userNameLabel.Text = $"{_myUserName}\n(Tôi)";
+
             try
             {
-                // Khởi tạo NetworkService ở đây, sau khi _myUserName đã được xác định
                 _networkService = new NetworkService(_myUserName, TcpPort, MulticastAddress, MulticastPort);
                 _networkService.MessageReceived += NetworkService_MessageReceived;
                 _networkService.PeerDiscovered += NetworkService_PeerDiscovered;
@@ -658,24 +693,17 @@ namespace Messenger
                 UpdateOnlineUsersList();
 
                 Debug.WriteLine("[MainForm_Load] Dọn dẹp lịch sử trò chuyện cũ.");
-                // Lấy danh sách các peer đã biết (bao gồm cả _myUserName và "Broadcast") để dọn dẹp lịch sử
-                var knownPeers = _onlineUsers.Concat(new[] { _myUserName, "Broadcast" }).Distinct().ToList();
-                foreach (var peerName in knownPeers)
-                {
-                    CleanupOldChatHistory(peerName);
-                }
+                CleanupOldChatHistory("Broadcast");
 
                 Debug.WriteLine("[MainForm_Load] Đang tải lịch sử trò chuyện công cộng.");
-                LoadChatHistory("Broadcast");
                 _currentPeer = "Broadcast";
                 selectedPeerLabel.Text = "Trò chuyện: Broadcast";
                 selectedPeerLabel.Tag = "Broadcast";
-                onlineUsersListBox.SelectedItem = "Broadcast"; // Chọn Broadcast trong danh sách
+                LoadChatHistory("Broadcast");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Không thể khởi động dịch vụ mạng.\nLỗi: {ex.Message}", "Lỗi khởi động mạng", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // Nếu có lỗi khởi động mạng, đóng ứng dụng
                 ExitApplication();
             }
         }
@@ -844,52 +872,52 @@ namespace Messenger
                 return;
             }
 
-            // Bỏ qua tin nhắn từ chính mình nếu nó không phải là tin nhắn hệ thống
+            // Bỏ qua tin nhắn từ chính mình nếu không phải tin nhắn hệ thống
             if (e.Message.SenderName == _myUserName && e.Message.Type != ChatMessage.MessageType.System)
             {
                 Debug.WriteLine($"[NetworkService_MessageReceived] Bỏ qua tin nhắn từ chính mình: {e.Message.SenderName}");
                 return;
             }
 
-            string selectedPeer = selectedPeerLabel.Tag as string ?? "Broadcast";
-            Debug.WriteLine($"[NetworkService_MessageReceived] Tin nhắn từ {e.Message.SenderName}, Peer đã chọn: {selectedPeer}, nội dung: {e.Message.Content}, ID tin nhắn: {e.Message.MessageId}");
+            Debug.WriteLine($"[NetworkService_MessageReceived] Tin nhắn từ {e.Message.SenderName}, nội dung: {e.Message.Content}, ID tin nhắn: {e.Message.MessageId}");
 
-            // Save chat history for the relevant peer
-            // If the message is from me, save it to the current peer's history.
-            // If the message is from another user, save it to their history.
-            string historyPeerName = e.Message.IsMyMessage ? selectedPeer : e.Message.SenderName;
-            SaveChatHistory(historyPeerName, e.Message);
+            // Lưu tin nhắn vào lịch sử chat (luôn là Broadcast vì chỉ dùng chế độ Broadcast)
+            SaveChatHistory("Broadcast", e.Message);
 
-
-            if (e.Message.SenderName == selectedPeer || selectedPeer == "Broadcast" || e.Message.Type == ChatMessage.MessageType.System)
+            // Thêm tin nhắn vào _chatMessages nếu chưa có
+            if (!_displayedMessageIds.Contains(e.Message.MessageId))
             {
-                if (!_displayedMessageIds.Contains(e.Message.MessageId))
+                _chatMessages.Add(e.Message);
+                _displayedMessageIds.Add(e.Message.MessageId);
+                Debug.WriteLine($"[NetworkService_MessageReceived] Đã thêm tin nhắn vào _chatMessages: {e.Message.Content}");
+
+                // Hiển thị tin nhắn ngay lập tức nếu ứng dụng đang mở
+                if (this.WindowState != FormWindowState.Minimized)
                 {
                     Debug.WriteLine($"[NetworkService_MessageReceived] Hiển thị tin nhắn từ {e.Message.SenderName}");
                     AddMessageToChat(e.Message);
-                    _displayedMessageIds.Add(e.Message.MessageId);
-
-                    // NEW LOGIC: Hiển thị thông báo nếu thu nhỏ
-                    if (this.WindowState == FormWindowState.Minimized)
-                    {
-                        _unreadMessageCount++; // Tăng số lượng tin nhắn chưa đọc
-                        UpdateTrayIcon(); // Cập nhật text của tray icon
-                        ShowNewMessageNotification(e.Message);
-                    }
                 }
                 else
                 {
-                    if (this.WindowState == FormWindowState.Minimized)
-                    {
-                        _unreadMessageCount++; // Vẫn tăng số tin nhắn chưa đọc
-                        UpdateTrayIcon(); // Thay đổi từ UpdateTrayIconText() sang UpdateTrayIcon()
-                    }
-                    Debug.WriteLine($"[NetworkService_MessageReceived] Bỏ qua tin nhắn trùng lặp (MessageId: {e.Message.MessageId})");
+                    Debug.WriteLine($"[NetworkService_MessageReceived] Ứng dụng đang ẩn, không hiển thị tin nhắn ngay lập tức: {e.Message.Content}");
+                }
+
+                // Hiển thị thông báo và tăng số tin nhắn chưa đọc nếu ứng dụng đang ẩn
+                if (this.WindowState == FormWindowState.Minimized)
+                {
+                    _unreadMessageCount++;
+                    UpdateTrayIcon();
+                    ShowNewMessageNotification(e.Message);
                 }
             }
             else
             {
-                Debug.WriteLine($"[NetworkService_MessageReceived] Tin nhắn từ {e.Message.SenderName} bị bỏ qua (selectedPeer: {selectedPeer})");
+                if (this.WindowState == FormWindowState.Minimized)
+                {
+                    _unreadMessageCount++;
+                    UpdateTrayIcon();
+                }
+                Debug.WriteLine($"[NetworkService_MessageReceived] Bỏ qua tin nhắn trùng lặp (MessageId: {e.Message.MessageId})");
             }
         }
 
