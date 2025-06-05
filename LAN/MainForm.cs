@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -55,6 +55,12 @@ namespace Messenger
         private readonly HashSet<Guid> _displayedMessageIds = new HashSet<Guid>(); // HashSet để theo dõi các ID tin nhắn đã hiển thị, tránh trùng lặp
         private const int TopListBoxMargin = 12;
         private int _unreadMessageCount = 0; // Thêm biến đếm tin nhắn chưa đọc
+        private ContextMenuStrip messageTextBoxContextMenuStrip;
+        private ToolStripMenuItem pasteMenuItem;
+        private ToolStripMenuItem cutMenuItem;
+        private ToolStripMenuItem copyMenuItem;
+        private ToolStripMenuItem selectAllMenuItem;
+
         public MainForm()
         {
             InitializeComponent(); // Gọi phương thức được tạo bởi trình thiết kế để khởi tạo các thành phần giao diện
@@ -117,6 +123,7 @@ namespace Messenger
             Directory.CreateDirectory(_profileDirectory); // Tạo thư mục hồ sơ nếu chưa tồn tại
             Directory.CreateDirectory(_chatHistoryDirectory); // Tạo thư mục lịch sử chat nếu chưa tồn tại
             InitializeSystemTray(); // Gọi phương thức để khởi tạo biểu tượng khay hệ thống
+            InitializeMessageTextBoxContextMenu(); // << THÊM DÒNG NÀY
         }
 
         // Phương thức trả về tên thứ trong tuần bằng tiếng Việt
@@ -264,6 +271,82 @@ namespace Messenger
                 }
                 chatListBox.Refresh(); // Buộc vẽ lại tất cả các mục
             }
+        }
+
+        private void InitializeMessageTextBoxContextMenu()
+        {
+            messageTextBoxContextMenuStrip = new ContextMenuStrip();
+
+            pasteMenuItem = new ToolStripMenuItem("Dán");
+            pasteMenuItem.Click += PasteMenuItem_Click;
+            messageTextBoxContextMenuStrip.Items.Add(pasteMenuItem);
+
+            // Thêm dòng phân cách (tùy chọn)
+            messageTextBoxContextMenuStrip.Items.Add(new ToolStripSeparator());
+
+            cutMenuItem = new ToolStripMenuItem("Cắt");
+            cutMenuItem.Click += CutMenuItem_Click;
+            messageTextBoxContextMenuStrip.Items.Add(cutMenuItem);
+
+            copyMenuItem = new ToolStripMenuItem("Sao chép");
+            copyMenuItem.Click += CopyMenuItem_Click;
+            messageTextBoxContextMenuStrip.Items.Add(copyMenuItem);
+
+            // Thêm dòng phân cách (tùy chọn)
+            messageTextBoxContextMenuStrip.Items.Add(new ToolStripSeparator());
+
+            selectAllMenuItem = new ToolStripMenuItem("Chọn tất cả");
+            selectAllMenuItem.Click += SelectAllMenuItem_Click;
+            messageTextBoxContextMenuStrip.Items.Add(selectAllMenuItem);
+
+            messageTextBox.ContextMenuStrip = messageTextBoxContextMenuStrip;
+
+            // Xử lý sự kiện Opening để bật/tắt các mục menu
+            messageTextBoxContextMenuStrip.Opening += MessageTextBoxContextMenuStrip_Opening;
+        }
+
+        private void PasteMenuItem_Click(object sender, EventArgs e)
+        {
+            // Kiểm tra xem có dữ liệu văn bản trong Clipboard không trước khi Dán
+            if (Clipboard.ContainsText())
+            {
+                messageTextBox.Paste();
+            }
+        }
+
+        private void CutMenuItem_Click(object sender, EventArgs e)
+        {
+            // Kiểm tra xem có văn bản nào được chọn không trước khi Cắt
+            if (messageTextBox.SelectionLength > 0)
+            {
+                messageTextBox.Cut();
+            }
+        }
+
+        private void CopyMenuItem_Click(object sender, EventArgs e)
+        {
+            // Kiểm tra xem có văn bản nào được chọn không trước khi Sao chép
+            if (messageTextBox.SelectionLength > 0)
+            {
+                messageTextBox.Copy();
+            }
+        }
+
+        private void SelectAllMenuItem_Click(object sender, EventArgs e)
+        {
+            // Kiểm tra xem có văn bản trong ô không trước khi Chọn tất cả
+            if (messageTextBox.TextLength > 0)
+            {
+                messageTextBox.SelectAll();
+            }
+        }
+
+        private void MessageTextBoxContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            pasteMenuItem.Enabled = Clipboard.ContainsText(TextDataFormat.UnicodeText) || Clipboard.ContainsText(TextDataFormat.Text);
+            cutMenuItem.Enabled = messageTextBox.SelectionLength > 0;
+            copyMenuItem.Enabled = messageTextBox.SelectionLength > 0;
+            selectAllMenuItem.Enabled = messageTextBox.TextLength > 0;
         }
 
         // Phương thức khôi phục ứng dụng từ khay hệ thống
