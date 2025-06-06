@@ -343,6 +343,7 @@ namespace Messenger
 
         private void MessageTextBoxContextMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            RemovePlaceholder();
             pasteMenuItem.Enabled = Clipboard.ContainsText(TextDataFormat.UnicodeText) || Clipboard.ContainsText(TextDataFormat.Text);
             cutMenuItem.Enabled = messageTextBox.SelectionLength > 0;
             copyMenuItem.Enabled = messageTextBox.SelectionLength > 0;
@@ -679,7 +680,7 @@ namespace Messenger
             {
                 Debug.WriteLine($"Lỗi phân tích ngày từ tên tệp {filePath}: {ex.Message}");
             }
-            return null; // Trả về null nếu không пар解析 được ngày
+            return null; // Trả về null nếu không tải được ngày
         }
 
         private void SetPlaceholder()
