@@ -80,8 +80,9 @@ namespace Messenger
             SetPlaceholder(); // Thiết lập placeholder ban đầu khi form được tải
 
             // Thiết lập menu ngữ cảnh (right-click menu) cho ListBox hiển thị tin nhắn
-            chatListBox.ContextMenuStrip = messageContextMenuStrip; // Gán ContextMenuStrip cho chatListBox
-            copyToolStripMenuItem.Click += copyToolStripMenuItem_Click; // Gán sự kiện click cho mục "Sao chép" trong menu ngữ cảnh
+            // Đặt trình kết xuất tùy chỉnh cho ContextMenuStrip của chatListBox
+            chatListBox.ContextMenuStrip = messageContextMenuStrip;
+            copyToolStripMenuItem.Click += copyToolStripMenuItem_Click;
 
             // Khởi tạo bộ xử lý hiển thị tin nhắn (MessageRenderer) với font chữ của chatListBox
             MessageRenderer.Initialize(chatListBox.Font);
@@ -89,6 +90,8 @@ namespace Messenger
             // Liên kết danh sách người dùng trực tuyến (_onlineUsers) với ListBox hiển thị người dùng trực tuyến
             onlineUsersListBox.DataSource = _onlineUsers;
             onlineUsersListBox.SelectedIndexChanged += OnlineUsersListBox_SelectedIndexChanged; // Gán sự kiện thay đổi lựa chọn cho phương thức OnlineUsersListBox_SelectedIndexChanged
+            onlineUsersListBox.DrawMode = DrawMode.OwnerDrawFixed;
+            onlineUsersListBox.DrawItem += OnlineUsersListBox_DrawItem;
 
             // Xử lý sự kiện bàn phím và thay đổi văn bản trong hộp thoại nhập tin nhắn
             messageTextBox.KeyDown += messageTextBox_KeyDown; // Gán sự kiện nhấn phím cho phương thức messageTextBox_KeyDown
@@ -123,7 +126,7 @@ namespace Messenger
             Directory.CreateDirectory(_profileDirectory); // Tạo thư mục hồ sơ nếu chưa tồn tại
             Directory.CreateDirectory(_chatHistoryDirectory); // Tạo thư mục lịch sử chat nếu chưa tồn tại
             InitializeSystemTray(); // Gọi phương thức để khởi tạo biểu tượng khay hệ thống
-            InitializeMessageTextBoxContextMenu(); // << THÊM DÒNG NÀY
+            InitializeMessageTextBoxContextMenu(); // Phương thức này khởi tạo messageTextBoxContextMenuStrip            
         }
 
         // Phương thức trả về tên thứ trong tuần bằng tiếng Việt
@@ -235,6 +238,37 @@ namespace Messenger
             _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
             UpdateTrayIcon();
         }
+        //Vẽ item trong phần OnlineUsersListBox khi được lựa chọn
+        private void OnlineUsersListBox_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            if (e.Index < 0 || e.Index >= onlineUsersListBox.Items.Count)
+                return;
+
+            // Lấy text của item
+            string text = onlineUsersListBox.Items[e.Index].ToString();
+
+            // Nếu item đang được chọn, KHÔNG vẽ nền (để trong suốt)
+            if ((e.State & DrawItemState.Selected) == DrawItemState.Selected)
+            {
+                // Không vẽ nền, chỉ vẽ text với màu đặc biệt nếu muốn
+                e.Graphics.FillRectangle(new SolidBrush(onlineUsersListBox.BackColor), e.Bounds);
+                using (Brush textBrush = new SolidBrush(onlineUsersListBox.ForeColor))
+                {
+                    e.Graphics.DrawString(text, e.Font, textBrush, e.Bounds);
+                }
+            }
+            else
+            {
+                // Vẽ nền bình thường
+                e.Graphics.FillRectangle(new SolidBrush(onlineUsersListBox.BackColor), e.Bounds);
+                using (Brush textBrush = new SolidBrush(onlineUsersListBox.ForeColor))
+                {
+                    e.Graphics.DrawString(text, e.Font, textBrush, e.Bounds);
+                }
+            }
+
+            e.DrawFocusRectangle();
+        }
         // Phương thức được gọi khi form thay đổi kích thước
         private void MainForm_Resize(object sender, EventArgs e)
         {
@@ -249,7 +283,7 @@ namespace Messenger
                         "Messenger",
                         "Ứng dụng đã được thu nhỏ vào khay hệ thống. Nhấp đúp để khôi phục.",
                         this.Icon,
-                        7000,
+                        8000,
                         RestoreFromTray
                     );
                     balloon.Show();
