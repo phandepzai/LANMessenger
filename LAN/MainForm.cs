@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -29,7 +29,8 @@ namespace Messenger
         //private const string MulticastAddress = "224.0.1.0";//multicast giữa các subnet (Ví dụ: 224.0.1.100, 232.10.5.20, 239.1.1.1)
         //private const string MulticastAddress = "239.0.0.0";//multicast trong mạng LAN cục bộ
         //private const string MulticastAddress = "224.0.0.2";//multicast (all routers)
-        private const string MulticastAddress = "224.0.0.1";// Địa chỉ multicast "all hosts" (tất cả các máy chủ trong mạng cục bộ)
+        //private const string MulticastAddress = "224.0.0.1";// Địa chỉ multicast "all hosts" (tất cả các máy chủ trong mạng cục bộ)
+        private const string MulticastAddress = "239.192.1.1";// Địa chỉ multicast an toàn và phù hợp cho mạng nội bộ có nhiều subnet
         private const int MulticastPort = 14001; // Cổng (port) được sử dụng cho giao tiếp multicast
         private Image _myAvatar; // Biến lưu trữ ảnh đại diện (avatar) của người dùng hiện tại
         private string _myUserName; // Biến lưu trữ tên người dùng của người dùng hiện tại
@@ -1793,8 +1794,6 @@ namespace Messenger
                         text = "99+";
                     }
 
-                    // Kích thước và vị trí của hình tròn nền (badge)
-                    // Điều chỉnh badgeDiameter để nó chiếm khoảng 40-50% của targetIconSize, 
                     // và không quá lớn để che icon chính.
                     float badgeDiameter = targetIconSize * 0.45f;
                     // Có thể tăng nhẹ nếu số tin nhắn có nhiều chữ số
@@ -1840,7 +1839,6 @@ namespace Messenger
                         }
                     }
                 }
-                // --- Kết thúc vẽ "badge" số tin nhắn ---
 
                 // Chuyển Bitmap đã vẽ thành Icon
                 using (MemoryStream ms = new MemoryStream())
