@@ -332,8 +332,8 @@ namespace Messenger
                     }
                     else//Tin nhắn gửi đến
                     {
-                        colorStart = Color.FromArgb(252, 228, 159); // Vàng nhạt
-                        colorEnd = Color.FromArgb(252, 250, 159); // Trắng nhạt
+                        colorStart = Color.FromArgb(238, 232, 170); // Vàng nhạt
+                        colorEnd = Color.FromArgb(250, 250, 210); // Trắng nhạt
                     }
 
                     using (LinearGradientBrush gradientBrush = new LinearGradientBrush(

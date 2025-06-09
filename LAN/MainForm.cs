@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -80,10 +80,25 @@ namespace Messenger
             messageTextBox.Leave += (s, e) => SetPlaceholder(); // Khi con trỏ rời khỏi hộp thoại, thiết lập lại placeholder nếu không có văn bản
             SetPlaceholder(); // Thiết lập placeholder ban đầu khi form được tải
 
-            // Thiết lập menu ngữ cảnh (right-click menu) cho ListBox hiển thị tin nhắn
-            // Đặt trình kết xuất tùy chỉnh cho ContextMenuStrip của chatListBox
-            chatListBox.ContextMenuStrip = messageContextMenuStrip;
-            copyToolStripMenuItem.Click += copyToolStripMenuItem_Click;
+            // Trong constructor của MainForm
+            // Cập nhật khởi tạo context menu cho chatListBox
+            chatListBox.ContextMenuStrip = new ContextMenuStrip();
+            chatListBox.ContextMenuStrip.RenderMode = ToolStripRenderMode.Professional;
+            chatListBox.ContextMenuStrip.Renderer = new RoundedContextMenuRenderer();
+            chatListBox.ContextMenuStrip.Items.Add("Sao chép", null, copyToolStripMenuItem_Click);
+            chatListBox.ContextMenuStrip.Font = new Font("Segoe UI", 9);
+            chatListBox.ContextMenuStrip.Opened += (s, e) =>
+            {
+                if (s is ContextMenuStrip menu)
+                {
+                    float dpiScale = menu.CreateGraphics().DpiX / 96f;
+                    int adjustedRadius = (int)(15 * dpiScale);
+                    using (var path = GetRoundedRect(new Rectangle(0, 0, menu.Width, menu.Height), adjustedRadius))
+                    {
+                        menu.Region = new Region(path);
+                    }
+                }
+            };
 
             // Khởi tạo bộ xử lý hiển thị tin nhắn (MessageRenderer) với font chữ của chatListBox
             MessageRenderer.Initialize(chatListBox.Font);
@@ -208,37 +223,47 @@ namespace Messenger
             authorLabel.ForeColor = Color.Silver; // Đặt lại màu chữ của nhãn tác giả về màu bạc
         }
 
-        // Phương thức khởi tạo biểu tượng khay hệ thống (system tray)
+        // Trong phương thức InitializeSystemTray
         private void InitializeSystemTray()
         {
             _trayIcon = new NotifyIcon
             {
-                Text = "Messenger", // Văn bản hiển thị khi di chuột qua biểu tượng
-                Visible = true // Đặt biểu tượng hiển thị
+                Text = "Messenger",
+                Visible = true,
+                Icon = this.Icon ?? SystemIcons.Application
             };
 
-            // Gán biểu tượng cho NotifyIcon
-            if (this.Icon != null)
-            {
-                _trayIcon.Icon = this.Icon; // Sử dụng biểu tượng của form chính
-                Debug.WriteLine("Đã gán biểu tượng của MainForm cho khay hệ thống.");
-            }
-            else
-            {
-                _trayIcon.Icon = SystemIcons.Application; // Sử dụng biểu tượng ứng dụng mặc định nếu không tìm thấy
-                Debug.WriteLine("Không tìm thấy biểu tượng của MainForm. Sử dụng biểu tượng mặc định SystemIcons.Application. Vui lòng kiểm tra thiết lập biểu tượng trong Properties của dự án hoặc MainForm.");
-            }
-
-            // Tạo menu ngữ cảnh cho biểu tượng khay hệ thống
             ContextMenuStrip trayMenu = new ContextMenuStrip();
-            trayMenu.Items.Add("MỞ", null, (s, e) => RestoreFromTray()); // Thêm mục "Mở" để khôi phục ứng dụng
-            trayMenu.Items.Add("THOÁT", null, (s, e) => ExitApplication()); // Thêm mục "Thoát" để đóng ứng dụng
-            _trayIcon.ContextMenuStrip = trayMenu; // Gán menu ngữ cảnh cho NotifyIcon
+            trayMenu.RenderMode = ToolStripRenderMode.Professional;
+            trayMenu.Renderer = new RoundedContextMenuRenderer();
+            trayMenu.Font = new Font("Segoe UI", 9);
+            trayMenu.Opened += (s, e) =>
+            {
+                if (s is ContextMenuStrip menu)
+                {
+                    float dpiScale = menu.CreateGraphics().DpiX / 96f;
+                    int adjustedRadius = (int)(15 * dpiScale);
+                    using (var path = GetRoundedRect(new Rectangle(0, 0, menu.Width, menu.Height), adjustedRadius))
+                    {
+                        menu.Region = new Region(path);
+                    }
+                }
+            };
+            var openItem = new ToolStripMenuItem("Mở", null, (s, e) => RestoreFromTray());
+            var exitItem = new ToolStripMenuItem("Thoát", null, (s, e) => ExitApplication());
 
-            // Xử lý sự kiện nhấp đúp chuột vào biểu tượng khay hệ thống để khôi phục ứng dụng
+            openItem.Padding = new Padding(10, 6, 10, 6);
+            exitItem.Padding = new Padding(10, 6, 10, 6);
+
+            trayMenu.Items.Add(openItem);
+            trayMenu.Items.Add(new ToolStripSeparator());
+            trayMenu.Items.Add(exitItem);
+
+            _trayIcon.ContextMenuStrip = trayMenu;
             _trayIcon.DoubleClick += (s, e) => RestoreFromTray();
             UpdateTrayIcon();
         }
+
         //Vẽ item trong phần OnlineUsersListBox khi được lựa chọn
         private void OnlineUsersListBox_DrawItem(object sender, DrawItemEventArgs e)
         {
@@ -308,35 +333,74 @@ namespace Messenger
             }
         }
 
+        // Thêm phương thức GetRoundedRect vào MainForm.cs để sử dụng trong sự kiện Opened
+        private GraphicsPath GetRoundedRect(Rectangle bounds, int radius)
+        {
+            int diameter = radius * 2;
+            Size size = new Size(diameter, diameter);
+            Rectangle arc = new Rectangle(bounds.Location, size);
+            GraphicsPath path = new GraphicsPath();
+
+            if (radius <= 0 || bounds.Width < diameter || bounds.Height < diameter)
+            {
+                path.AddRectangle(bounds);
+                return path;
+            }
+
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+
+            path.CloseFigure();
+            return path;
+        }
+        // Trong phương thức InitializeMessageTextBoxContextMenu
         private void InitializeMessageTextBoxContextMenu()
         {
             messageTextBoxContextMenuStrip = new ContextMenuStrip();
+            messageTextBoxContextMenuStrip.RenderMode = ToolStripRenderMode.Professional;
+            messageTextBoxContextMenuStrip.Renderer = new RoundedContextMenuRenderer();
+            messageTextBoxContextMenuStrip.Padding = new Padding(5);
+            messageTextBoxContextMenuStrip.ShowImageMargin = false;
+            messageTextBoxContextMenuStrip.Opened += (s, e) =>
+            {
+                if (s is ContextMenuStrip menu)
+                {
+                    float dpiScale = menu.CreateGraphics().DpiX / 96f;
+                    int adjustedRadius = (int)(15 * dpiScale);
+                    using (var path = GetRoundedRect(new Rectangle(0, 0, menu.Width, menu.Height), adjustedRadius))
+                    {
+                        menu.Region = new Region(path);
+                    }
+                }
+            };
 
-            pasteMenuItem = new ToolStripMenuItem("Dán");
-            pasteMenuItem.Click += PasteMenuItem_Click;
+            pasteMenuItem = new ToolStripMenuItem("Dán", null, PasteMenuItem_Click);
+            cutMenuItem = new ToolStripMenuItem("Cắt", null, CutMenuItem_Click);
+            copyMenuItem = new ToolStripMenuItem("Sao chép", null, CopyMenuItem_Click);
+            selectAllMenuItem = new ToolStripMenuItem("Chọn tất cả", null, SelectAllMenuItem_Click);
+
             messageTextBoxContextMenuStrip.Items.Add(pasteMenuItem);
-
-            // Thêm dòng phân cách (tùy chọn)
             messageTextBoxContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-            cutMenuItem = new ToolStripMenuItem("Cắt");
-            cutMenuItem.Click += CutMenuItem_Click;
             messageTextBoxContextMenuStrip.Items.Add(cutMenuItem);
-
-            copyMenuItem = new ToolStripMenuItem("Sao chép");
-            copyMenuItem.Click += CopyMenuItem_Click;
             messageTextBoxContextMenuStrip.Items.Add(copyMenuItem);
-
-            // Thêm dòng phân cách (tùy chọn)
             messageTextBoxContextMenuStrip.Items.Add(new ToolStripSeparator());
-
-            selectAllMenuItem = new ToolStripMenuItem("Chọn tất cả");
-            selectAllMenuItem.Click += SelectAllMenuItem_Click;
             messageTextBoxContextMenuStrip.Items.Add(selectAllMenuItem);
 
-            messageTextBox.ContextMenuStrip = messageTextBoxContextMenuStrip;
+            foreach (ToolStripItem item in messageTextBoxContextMenuStrip.Items)
+            {
+                item.Font = new Font("Segoe UI", 9);
+                if (item is ToolStripMenuItem menuItem)
+                {
+                    menuItem.Padding = new Padding(6, 4, 6, 4);
+                }
+            }
 
-            // Xử lý sự kiện Opening để bật/tắt các mục menu
+            messageTextBox.ContextMenuStrip = messageTextBoxContextMenuStrip;
             messageTextBoxContextMenuStrip.Opening += MessageTextBoxContextMenuStrip_Opening;
         }
 
